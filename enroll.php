@@ -1,35 +1,43 @@
 <?php
 session_start();
 include("config/db.php");
+include("includes/auth.php");
+require_role('student');
 
-// Check login
-if(!isset($_SESSION['user_id'])){
-    header("Location: login.php");
-    exit();
-}
+$user_id   = $_SESSION['user_id'];
+$course_id = intval($_GET['course_id'] ?? 0);
 
-// Only student allowed
-if($_SESSION['role'] != 'student'){
-    echo "Access Denied!";
-    exit();
-}
+if($course_id <= 0){ header("Location: view_courses.php"); exit(); }
 
-// Get data
-$user_id = $_SESSION['user_id'];
-$course_id = $_GET['course_id'];
-
-// Prevent duplicate enrollment
-$check = $conn->query("SELECT * FROM enrollments WHERE user_id='$user_id' AND course_id='$course_id'");
+$check = $conn->prepare("SELECT id FROM enrollments WHERE user_id=? AND course_id=?");
+$check->bind_param("ii", $user_id, $course_id);
+$check->execute();
+$check->store_result();
 
 if($check->num_rows > 0){
-    echo "Already Enrolled!";
+    $msg = "already";
 } else {
-    $sql = "INSERT INTO enrollments (user_id, course_id, progress) VALUES ('$user_id', '$course_id', 0)";
-    
-    if($conn->query($sql)){
-        echo "Enrolled Successfully!";
-    } else {
-        echo "Error: " . $conn->error;
-    }
+    $stmt = $conn->prepare("INSERT INTO enrollments (user_id, course_id, progress) VALUES (?, ?, 0)");
+    $stmt->bind_param("ii", $user_id, $course_id);
+    $msg = $stmt->execute() ? "success" : "error";
 }
 ?>
+<?php include("includes/header.php"); ?>
+
+<div class="mt-4">
+  <?php if($msg == "success"): ?>
+    <div class="alert alert-success alert-dismissible fade show">
+      Enrolled successfully!<button type="button" class="btn-close" data-bs-dismiss="alert"></button>
+    </div>
+  <?php elseif($msg == "already"): ?>
+    <div class="alert alert-warning alert-dismissible fade show">
+      You are already enrolled in this course.<button type="button" class="btn-close" data-bs-dismiss="alert"></button>
+    </div>
+  <?php else: ?>
+    <div class="alert alert-danger">Enrollment failed. Please try again.</div>
+  <?php endif; ?>
+  <a href="my_courses.php" class="btn btn-primary">My Courses</a>
+  <a href="view_courses.php" class="btn btn-secondary ms-2">Browse More</a>
+</div>
+
+<?php include("includes/footer.php"); ?>
