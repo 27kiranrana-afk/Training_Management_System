@@ -7,9 +7,10 @@ require_role('admin');
 
 if(isset($_GET['resolve'])){
     csrf_verify();
-    $id = intval($_GET['resolve']);
-    $stmt = $conn->prepare("UPDATE inquiries SET status='resolved' WHERE id=?");
-    $stmt->bind_param("i", $id);
+    $id    = intval($_GET['resolve']);
+    $reply = trim($_POST['reply'] ?? '');
+    $stmt  = $conn->prepare("UPDATE inquiries SET status='resolved', admin_reply=?, resolved_at=NOW() WHERE id=?");
+    $stmt->bind_param("si", $reply, $id);
     $stmt->execute();
     header("Location: manage_inquiries.php?done=1"); exit();
 }
@@ -50,11 +51,32 @@ $result = $conn->query("
       <td><?php echo $row['created_at']; ?></td>
       <td>
         <?php if($row['status']=='pending'): ?>
-          <a href="manage_inquiries.php?resolve=<?php echo $row['id']; ?>&csrf_token=<?php echo csrf_token(); ?>"
-             class="btn btn-sm btn-success"
-             onclick="return confirm('Mark as resolved?')">Resolve</a>
+          <button class="btn btn-sm btn-success" data-bs-toggle="modal"
+                  data-bs-target="#replyModal<?php echo $row['id']; ?>">Reply & Resolve</button>
+          <!-- Reply Modal -->
+          <div class="modal fade" id="replyModal<?php echo $row['id']; ?>" tabindex="-1">
+            <div class="modal-dialog">
+              <div class="modal-content">
+                <form method="POST" action="manage_inquiries.php?resolve=<?php echo $row['id']; ?>">
+                  <?php csrf_field(); ?>
+                  <div class="modal-header"><h5 class="modal-title">Reply to Inquiry</h5>
+                    <button type="button" class="btn-close" data-bs-dismiss="modal"></button></div>
+                  <div class="modal-body">
+                    <p><strong>Subject:</strong> <?php echo htmlspecialchars($row['subject']); ?></p>
+                    <p><strong>Message:</strong> <?php echo htmlspecialchars($row['message']); ?></p>
+                    <label>Your Reply</label>
+                    <textarea name="reply" class="form-control" rows="4" required></textarea>
+                  </div>
+                  <div class="modal-footer">
+                    <button type="submit" class="btn btn-success">Send & Resolve</button>
+                    <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cancel</button>
+                  </div>
+                </form>
+              </div>
+            </div>
+          </div>
         <?php else: ?>
-          <span class="text-muted">Done</span>
+          <span class="text-muted small"><?php echo htmlspecialchars($row['admin_reply'] ?? 'Resolved'); ?></span>
         <?php endif; ?>
       </td>
     </tr>

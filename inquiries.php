@@ -3,6 +3,7 @@ session_start();
 include("config/db.php");
 include("includes/auth.php");
 include("includes/csrf.php");
+require_once("config/salesforce.php");
 require_login();
 
 $success = $error = "";
@@ -15,7 +16,20 @@ if(isset($_POST['submit'])){
 
     $stmt = $conn->prepare("INSERT INTO inquiries (user_id, subject, message) VALUES (?, ?, ?)");
     $stmt->bind_param("iss", $user_id, $subject, $message);
-    $success = $stmt->execute() ? "Inquiry submitted! We'll get back to you soon." : "Failed to submit.";
+    if($stmt->execute()){
+        $success = "Inquiry submitted! We'll get back to you soon.";
+
+        // Push inquiry to Salesforce as a Case — fetch user email from DB
+        $emailStmt = $conn->prepare("SELECT email FROM users WHERE id = ?");
+        $emailStmt->bind_param("i", $user_id);
+        $emailStmt->execute();
+        $emailRow  = $emailStmt->get_result()->fetch_assoc();
+        $userEmail = $emailRow['email'] ?? '';
+        sf_create_case($subject, $message, $userEmail);
+
+    } else {
+        $error = "Failed to submit.";
+    }
 }
 ?>
 <?php include("includes/header.php"); ?>

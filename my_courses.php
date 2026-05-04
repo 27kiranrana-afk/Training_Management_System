@@ -7,9 +7,11 @@ require_login();
 $user_id = $_SESSION['user_id'];
 
 $stmt = $conn->prepare("
-    SELECT courses.id, courses.title, courses.duration, enrollments.progress
+    SELECT courses.id, courses.title, courses.duration, enrollments.progress,
+           users.name AS trainer_name
     FROM enrollments
     JOIN courses ON enrollments.course_id = courses.id
+    LEFT JOIN users ON courses.created_by = users.id
     WHERE enrollments.user_id = ?
     ORDER BY enrollments.id DESC
 ");
@@ -23,17 +25,22 @@ $result = $stmt->get_result();
 <div class="table-responsive">
 <table class="table table-bordered mt-3">
   <thead class="table-dark">
-    <tr><th>Course</th><th>Duration</th><th>Progress</th><th>Certificate</th></tr>
+    <tr><th>Course</th><th>Trainer</th><th>Progress</th><th>Certificate</th></tr>
   </thead>
   <tbody>
   <?php if($result->num_rows > 0): ?>
     <?php while($row = $result->fetch_assoc()): ?>
     <tr>
-      <td><?php echo htmlspecialchars($row['title']); ?></td>
-      <td><?php echo htmlspecialchars($row['duration']); ?></td>
+      <td>
+        <a href="course_detail.php?id=<?php echo $row['id']; ?>" class="fw-bold text-decoration-none">
+          <?php echo htmlspecialchars($row['title']); ?>
+        </a>
+        <br><small class="text-muted">Click to view materials & update progress</small>
+      </td>
+      <td><?php echo htmlspecialchars($row['trainer_name'] ?? '—'); ?></td>
       <td>
         <div class="progress" style="height:20px">
-          <div class="progress-bar <?php echo $row['progress']==100 ? 'bg-success' : ''; ?>"
+          <div class="progress-bar <?php echo $row['progress']==100 ? 'bg-success' : ($row['progress']>0 ? 'bg-info' : ''); ?>"
                style="width:<?php echo $row['progress']; ?>%">
             <?php echo $row['progress']; ?>%
           </div>
@@ -43,7 +50,7 @@ $result = $stmt->get_result();
         <?php if($row['progress'] >= 100): ?>
           <a href="certificate.php?course_id=<?php echo $row['id']; ?>" class="btn btn-sm btn-success">🎓 Download</a>
         <?php else: ?>
-          <span class="text-muted small">Complete course to unlock</span>
+          <a href="course_detail.php?id=<?php echo $row['id']; ?>" class="btn btn-sm btn-outline-primary">Continue →</a>
         <?php endif; ?>
       </td>
     </tr>

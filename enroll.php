@@ -9,6 +9,38 @@ $course_id = intval($_GET['course_id'] ?? 0);
 
 if($course_id <= 0){ header("Location: view_courses.php"); exit(); }
 
+// Fetch course to check fees
+$cStmt = $conn->prepare("SELECT fees FROM courses WHERE id = ? AND is_active = 1");
+$cStmt->bind_param("i", $course_id);
+$cStmt->execute();
+$course_row = $cStmt->get_result()->fetch_assoc();
+
+if(!$course_row){ header("Location: view_courses.php"); exit(); }
+
+// Block direct access for paid courses — must go through payment
+if($course_row['fees'] > 0){
+    // Check if payment exists for this user+course
+    $conn->query("CREATE TABLE IF NOT EXISTS payments (
+        id INT AUTO_INCREMENT PRIMARY KEY,
+        user_id INT NOT NULL,
+        course_id INT NOT NULL,
+        razorpay_order_id VARCHAR(100),
+        razorpay_payment_id VARCHAR(100),
+        amount DECIMAL(10,2),
+        status VARCHAR(20) DEFAULT 'success',
+        paid_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
+    )");
+    $pChk = $conn->prepare("SELECT id FROM payments WHERE user_id=? AND course_id=? AND status='success'");
+    $pChk->bind_param("ii", $user_id, $course_id);
+    $pChk->execute();
+    $pChk->store_result();
+    if($pChk->num_rows === 0){
+        // No payment found — redirect to payment page
+        header("Location: payment.php?course_id=$course_id");
+        exit();
+    }
+}
+
 $check = $conn->prepare("SELECT id FROM enrollments WHERE user_id=? AND course_id=?");
 $check->bind_param("ii", $user_id, $course_id);
 $check->execute();

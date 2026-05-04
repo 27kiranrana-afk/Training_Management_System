@@ -1,0 +1,13 @@
+# Sensitive config files - DO NOT push to GitHub
+config/db.php
+config/salesforce.php
+config/razorpay.php
+
+# Uploaded files
+uploads/videos/
+uploads/notes/
+
+# System files
+.DS_Store
+Thumbs.db
+*.log
