@@ -11,7 +11,7 @@ if($course_id <= 0){ header("Location: my_courses.php"); exit(); }
 
 // Verify the student has completed this course AND owns the enrollment
 $stmt = $conn->prepare("
-    SELECT enrollments.progress, users.name, courses.title, courses.duration, courses.id AS cid
+    SELECT enrollments.progress, users.name, courses.title, courses.duration, courses.fees, courses.id AS cid
     FROM enrollments
     JOIN users ON enrollments.user_id = users.id
     JOIN courses ON enrollments.course_id = courses.id
@@ -26,12 +26,9 @@ if(!$data || $data['progress'] < 100){
     header("Location: my_courses.php"); exit();
 }
 
-// Check if course has any YouTube/URL based materials → Self Paced
-$mat_check = $conn->prepare("SELECT COUNT(*) FROM course_materials WHERE course_id=? AND type IN ('video_url','notes_url')");
-$mat_check->bind_param("i", $course_id);
-$mat_check->execute();
-$url_count = $mat_check->get_result()->fetch_row()[0];
-$display_duration = $url_count > 0 ? 'Self Paced' : $data['duration'];
+// Free course = Self Paced, Paid course = actual duration
+$is_free = ($data['fees'] <= 0);
+$display_duration = $is_free ? 'Self Paced' : $data['duration'];
 ?>
 <?php include("includes/header.php"); ?>
 
@@ -43,7 +40,13 @@ $display_duration = $url_count > 0 ? 'Self Paced' : $data['duration'];
   <h3 class="fw-bold"><?php echo htmlspecialchars($data['name']); ?></h3>
   <p class="fs-5">has successfully completed the course</p>
   <h4 class="text-primary"><?php echo htmlspecialchars($data['title']); ?></h4>
-  <p>Duration: <?php echo htmlspecialchars($display_duration); ?></p>
+  <p>
+    <?php if($is_free): ?>
+      <span class="badge bg-success px-3 py-2">🆓 Free Course — Self Paced</span>
+    <?php else: ?>
+      <strong>Duration:</strong> <?php echo htmlspecialchars($display_duration); ?>
+    <?php endif; ?>
+  </p>
   <p class="text-muted mt-4">Date: <?php echo date("d M Y"); ?></p>
   <hr>
   <p class="text-muted small">Issued by Training Management System</p>

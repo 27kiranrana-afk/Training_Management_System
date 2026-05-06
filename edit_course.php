@@ -26,9 +26,8 @@ if(!$course){ header("Location: view_courses.php?error=unauthorized"); exit(); }
 // Delete a material
 if(isset($_POST['delete_material'])){
     csrf_verify();
-    $mid  = intval($_POST['material_id']);
-    $conn->prepare("DELETE FROM course_materials WHERE id=? AND course_id=?")->execute() ;
-    $dm   = $conn->prepare("DELETE FROM course_materials WHERE id=? AND course_id=?");
+    $mid = intval($_POST['material_id']);
+    $dm  = $conn->prepare("DELETE FROM course_materials WHERE id=? AND course_id=?");
     $dm->bind_param("ii", $mid, $id);
     $dm->execute();
     header("Location: edit_course.php?id=$id&deleted_mat=1"); exit();
@@ -38,8 +37,9 @@ if(isset($_POST['delete_material'])){
 if(isset($_POST['update'])){
     csrf_verify();
     $title       = trim($_POST['title']);
-    $duration    = trim($_POST['duration']);
-    $fees        = floatval($_POST['fees'] ?? 0);
+    $course_type = $_POST['course_type'] ?? 'free';
+    $fees        = ($course_type === 'paid') ? floatval($_POST['fees'] ?? 0) : 0;
+    $duration    = ($course_type === 'free') ? 'Self Paced' : trim($_POST['duration']);
     $description = trim($_POST['description'] ?? '');
 
     $stmt = $conn->prepare("UPDATE courses SET title=?, duration=?, fees=?, description=?, created_by=COALESCE(created_by,?) WHERE id=?");
@@ -132,23 +132,35 @@ $materials = $mats->get_result();
                  value="<?php echo htmlspecialchars($course['title']); ?>" required>
         </div>
         <div class="mb-3">
-          <label>Duration</label>
-          <input type="text" name="duration" class="form-control"
-                 value="<?php echo htmlspecialchars($course['duration']); ?>" required>
-        </div>
-        <div class="mb-3">
-          <label>Fees (₹)</label>
-          <div class="form-check mb-2">
-            <input type="checkbox" class="form-check-input" id="is_free"
-                   <?php echo ($course['fees'] == 0) ? 'checked' : ''; ?>
-                   onchange="toggleFees(this)">
-            <label class="form-check-label" for="is_free">🆓 This is a Free Course</label>
+          <label class="fw-bold">Course Type</label>
+          <div class="d-flex gap-3 mt-1">
+            <div class="form-check">
+              <input class="form-check-input" type="radio" name="course_type" id="type_free" value="free"
+                     <?php echo ($course['fees'] <= 0) ? 'checked' : ''; ?> onchange="toggleFees(this)">
+              <label class="form-check-label" for="type_free">🆓 Free <small class="text-muted">(Self Paced)</small></label>
+            </div>
+            <div class="form-check">
+              <input class="form-check-input" type="radio" name="course_type" id="type_paid" value="paid"
+                     <?php echo ($course['fees'] > 0) ? 'checked' : ''; ?> onchange="toggleFees(this)">
+              <label class="form-check-label" for="type_paid">💳 Paid <small class="text-muted">(Fixed Duration)</small></label>
+            </div>
           </div>
-          <div class="input-group" id="fees_input" <?php echo ($course['fees'] == 0) ? 'style="display:none"' : ''; ?>>
+        </div>
+        <div class="mb-3" id="fees_input" <?php echo ($course['fees'] <= 0) ? 'style="display:none"' : ''; ?>>
+          <label>Course Fees (₹)</label>
+          <div class="input-group">
             <span class="input-group-text">₹</span>
             <input type="number" name="fees" id="fees" class="form-control" min="0" step="0.01"
-                   value="<?php echo $course['fees'] ?? 0; ?>">
+                   value="<?php echo $course['fees'] > 0 ? $course['fees'] : '0'; ?>"
+                   <?php echo ($course['fees'] <= 0) ? 'disabled' : ''; ?>>
           </div>
+        </div>
+        <div class="mb-3">
+          <label>Duration <small class="text-muted" id="duration_hint"><?php echo ($course['fees'] <= 0) ? '(self-paced — fixed automatically)' : '(required for paid courses)'; ?></small></label>
+          <input type="text" name="duration" class="form-control"
+                 value="<?php echo htmlspecialchars($course['duration']); ?>"
+                 <?php echo ($course['fees'] <= 0) ? 'readonly' : ''; ?>
+                 placeholder="e.g. 3 months, 40 hours">
         </div>
         <div class="mb-3">
           <label>Description</label>
@@ -235,14 +247,25 @@ $materials = $mats->get_result();
 <?php endif; ?>
 
 <script>
-function toggleFees(checkbox) {
-    const feesInput = document.getElementById('fees_input');
-    const feesField = document.getElementById('fees');
-    if (checkbox.checked) {
+function toggleFees(radio) {
+    const feesInput     = document.getElementById('fees_input');
+    const feesField     = document.getElementById('fees');
+    const durationField = document.querySelector('[name="duration"]');
+    const durationHint  = document.getElementById('duration_hint');
+
+    if (radio.value === 'free') {
         feesInput.style.display = 'none';
-        feesField.value = 0;
+        feesField.value = '0';
+        feesField.disabled = true;
+        durationField.value = 'Self Paced';
+        durationField.removeAttribute('required');
+        durationHint.textContent = '(self-paced — fixed automatically)';
     } else {
-        feesInput.style.display = 'flex';
+        feesInput.style.display = 'block';
+        feesField.disabled = false;
+        if(durationField.value === 'Self Paced') durationField.value = '';
+        durationField.placeholder = 'e.g. 3 months, 40 hours';
+        durationHint.textContent = '(required for paid courses)';
     }
 }
 

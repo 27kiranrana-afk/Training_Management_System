@@ -175,7 +175,7 @@ if($role === 'student' && $enrolled){
     <div class="row g-3 mb-4">
       <div class="col-md-4">
         <div class="card text-center p-3 bg-light">
-          <div class="fw-bold fs-5">⏱ <?php echo htmlspecialchars($course['duration']); ?></div>
+          <div class="fw-bold fs-5">⏱ <?php echo $course['fees'] > 0 ? htmlspecialchars($course['duration']) : 'Self Paced'; ?></div>
           <small class="text-muted">Duration</small>
         </div>
       </div>

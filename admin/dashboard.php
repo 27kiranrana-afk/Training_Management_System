@@ -10,6 +10,11 @@ $total_courses     = $conn->query("SELECT COUNT(*) FROM courses")->fetch_row()[0
 $total_enrollments = $conn->query("SELECT COUNT(*) FROM enrollments")->fetch_row()[0];
 $pending_inquiries = $conn->query("SELECT COUNT(*) FROM inquiries WHERE status='pending'")->fetch_row()[0];
 $completed         = $conn->query("SELECT COUNT(*) FROM enrollments WHERE progress=100")->fetch_row()[0];
+$pending_refunds   = 0;
+$rCheck = $conn->query("SHOW TABLES LIKE 'refund_requests'");
+if($rCheck && $rCheck->num_rows > 0){
+    $pending_refunds = $conn->query("SELECT COUNT(*) FROM refund_requests WHERE status IN ('pending','processing')")->fetch_row()[0];
+}
 
 // Recent enrollments
 $recent = $conn->query("
@@ -91,6 +96,14 @@ $trainers = $conn->query("
       </div>
     </a>
   </div>
+  <div class="col-md-2">
+    <a href="refunds.php" class="text-decoration-none">
+      <div class="card text-white bg-danger text-center p-3 h-100">
+        <div class="fs-2 fw-bold"><?php echo $pending_refunds; ?></div>
+        <div>Pending Refunds</div>
+      </div>
+    </a>
+  </div>
 </div>
 
 <!-- Quick Actions -->
@@ -101,6 +114,7 @@ $trainers = $conn->query("
   <div class="col-md-3"><a href="../course_progress.php" class="btn btn-info w-100">📈 Progress</a></div>
   <div class="col-md-3"><a href="users.php" class="btn btn-dark w-100">👥 Users</a></div>
   <div class="col-md-3"><a href="reports.php" class="btn btn-success w-100">📊 Reports</a></div>
+  <div class="col-md-3"><a href="refunds.php" class="btn btn-danger w-100">💰 Refund Requests</a></div>
 </div>
 
 <div class="row g-4">

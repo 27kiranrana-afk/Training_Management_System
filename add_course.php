@@ -12,7 +12,9 @@ if(isset($_POST['add'])){
     csrf_verify();
     $title       = trim($_POST['title']);
     $duration    = trim($_POST['duration']);
-    $fees        = floatval($_POST['fees'] ?? 0);
+    $course_type = $_POST['course_type'] ?? 'free';
+    $fees        = ($course_type === 'paid') ? floatval($_POST['fees'] ?? 0) : 0;
+    $duration    = ($course_type === 'free') ? 'Self Paced' : $duration;
     $description = trim($_POST['description'] ?? '');
     $created_by  = $_SESSION['user_id'];
 
@@ -96,19 +98,28 @@ if(isset($_POST['add'])){
           <input type="text" name="title" class="form-control" required>
         </div>
         <div class="mb-3">
-          <label>Duration (e.g. 3 months, 40 hours)</label>
-          <input type="text" name="duration" class="form-control" required>
+          <label class="fw-bold">Course Type <span class="text-danger">*</span></label>
+          <div class="d-flex gap-3 mt-1">
+            <div class="form-check">
+              <input class="form-check-input" type="radio" name="course_type" id="type_free" value="free" checked onchange="toggleFees(this)">
+              <label class="form-check-label" for="type_free">🆓 Free <small class="text-muted">(Self Paced)</small></label>
+            </div>
+            <div class="form-check">
+              <input class="form-check-input" type="radio" name="course_type" id="type_paid" value="paid" onchange="toggleFees(this)">
+              <label class="form-check-label" for="type_paid">💳 Paid <small class="text-muted">(Fixed Duration)</small></label>
+            </div>
+          </div>
         </div>
-        <div class="mb-3">
-          <label>Fees (₹)</label>
-          <div class="form-check mb-2">
-            <input type="checkbox" class="form-check-input" id="is_free" onchange="toggleFees(this)">
-            <label class="form-check-label" for="is_free">🆓 This is a Free Course</label>
-          </div>
-          <div class="input-group" id="fees_input">
+        <div class="mb-3" id="fees_input" style="display:none">
+          <label>Course Fees (₹) <span class="text-danger">*</span></label>
+          <div class="input-group">
             <span class="input-group-text">₹</span>
-            <input type="number" name="fees" id="fees" class="form-control" min="0" step="0.01" value="0" required>
+            <input type="number" name="fees" id="fees" class="form-control" min="0" step="0.01" value="0" disabled>
           </div>
+        </div>
+        <div class="mb-3" id="duration_input">
+          <label>Duration <small class="text-muted" id="duration_hint">(optional for self-paced)</small></label>
+          <input type="text" name="duration" class="form-control" placeholder="e.g. 3 months, 40 hours" value="Self Paced">
         </div>
         <div class="mb-3">
           <label>Description</label>
@@ -160,15 +171,25 @@ if(isset($_POST['add'])){
 </form>
 
 <script>
-// Toggle URL/file input based on type selection
-function toggleFees(checkbox) {
-    const feesInput = document.getElementById('fees_input');
-    const feesField = document.getElementById('fees');
-    if (checkbox.checked) {
-        feesInput.classList.add('d-none');
-        feesField.value = 0;
+function toggleFees(radio) {
+    const feesInput    = document.getElementById('fees_input');
+    const feesField    = document.getElementById('fees');
+    const durationField = document.querySelector('[name="duration"]');
+    const durationHint  = document.getElementById('duration_hint');
+
+    if (radio.value === 'free') {
+        feesInput.style.display = 'none';
+        feesField.value = '0';
+        feesField.disabled = true;
+        durationField.value = 'Self Paced';
+        durationField.removeAttribute('required');
+        durationHint.textContent = '(self-paced — fixed automatically)';
     } else {
-        feesInput.classList.remove('d-none');
+        feesInput.style.display = 'block';
+        feesField.disabled = false;
+        if(durationField.value === 'Self Paced') durationField.value = '';
+        durationField.placeholder = 'e.g. 3 months, 40 hours';
+        durationHint.textContent = '(required for paid courses)';
     }
 }
 

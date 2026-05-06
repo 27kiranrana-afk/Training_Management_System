@@ -18,10 +18,36 @@ if(!defined('BASE_URL')) include_once __DIR__ . '/base.php';
         </button>
         <div class="collapse navbar-collapse" id="navMenu">
             <ul class="navbar-nav ms-auto">
-                <li class="nav-item"><a class="nav-link" href="<?php echo BASE_URL; ?>">Home</a></li>
+                <li class="nav-item"><a class="nav-link" href="<?php echo BASE_URL; ?>dashboard.php">Home</a></li>
                 <?php if(isset($_SESSION['user'])): ?>
-                    <li class="nav-item"><a class="nav-link" href="<?php echo BASE_URL; ?>dashboard.php">Dashboard</a></li>
                     <li class="nav-item"><a class="nav-link" href="<?php echo BASE_URL; ?>profile.php">👤 Profile</a></li>
+                    <?php if(in_array($_SESSION['role'] ?? '', ['student','trainer'])):
+                        // Get unread message count
+                        $uid_nav = $_SESSION['user_id'] ?? 0;
+                        $unread_nav = 0;
+                        if($uid_nav){
+                            $unread_q = $conn->query("SHOW TABLES LIKE 'messages'");
+                            if($unread_q && $unread_q->num_rows > 0){
+                                $unread_stmt = $conn->prepare("SELECT COUNT(*) FROM messages WHERE user_id=? AND is_read=0");
+                                if($unread_stmt){
+                                    $unread_stmt->bind_param("i", $uid_nav);
+                                    $unread_stmt->execute();
+                                    $unread_nav = $unread_stmt->get_result()->fetch_row()[0];
+                                }
+                            }
+                        }
+                    ?>
+                    <li class="nav-item">
+                        <a class="nav-link position-relative" href="<?php echo BASE_URL; ?>messages.php">
+                            📬
+                            <?php if($unread_nav > 0): ?>
+                                <span class="position-absolute top-0 start-100 translate-middle badge rounded-pill bg-danger" style="font-size:0.6rem">
+                                    <?php echo $unread_nav; ?>
+                                </span>
+                            <?php endif; ?>
+                        </a>
+                    </li>
+                    <?php endif; ?>
                     <li class="nav-item"><span class="nav-link text-white-50">
                         <?php echo htmlspecialchars($_SESSION['user']); ?> (<?php echo ucfirst($_SESSION['role']); ?>)
                     </span></li>
