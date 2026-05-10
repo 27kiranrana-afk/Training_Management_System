@@ -1,6 +1,7 @@
 <?php
 session_start();
 include("config/db.php");
+include("includes/base.php");
 include("includes/csrf.php");
 
 $success = $error = "";
@@ -14,11 +15,11 @@ if(isset($_POST['send'])){
     $stmt->execute();
     $user = $stmt->get_result()->fetch_assoc();
 
-    // Always show success to prevent email enumeration
+    // Always show the same message to prevent email enumeration
     $success = "If that email exists, a reset link has been sent.";
 
     if($user && $user['role'] !== 'admin'){
-// Fix duplicate SQL in forgot_password.php
+        // Remove any existing unused tokens for this email
         $del = $conn->prepare("DELETE FROM password_resets WHERE email = ?");
         $del->bind_param("s", $email);
         $del->execute();
@@ -30,9 +31,11 @@ if(isset($_POST['send'])){
         $ins->bind_param("sss", $email, $token, $expires);
         $ins->execute();
 
-        // In a real app you'd email this link. For now show it directly.
-        $reset_link = "http://localhost/training_system/reset_password.php?token=$token";
-        $success = "Reset link generated! <a href='$reset_link' class='alert-link'>Click here to reset your password</a>.<br><small class='text-muted'>In production this would be emailed to you.</small>";
+        // Build reset link using auto-detected BASE_URL (works on localhost and live)
+        $reset_link = BASE_URL . 'reset_password.php?token=' . urlencode($token);
+
+        // TODO: Wire up PHPMailer here to email $reset_link to $email
+        // The link is intentionally NOT shown to the user or logged for security.
     }
 }
 ?>
@@ -43,10 +46,10 @@ if(isset($_POST['send'])){
     <h3 class="mb-4">Forgot Password</h3>
 
     <?php if($success): ?>
-      <div class="alert alert-success"><?php echo $success; ?></div>
+      <div class="alert alert-success"><?php echo htmlspecialchars($success); ?></div>
     <?php endif; ?>
     <?php if($error): ?>
-      <div class="alert alert-danger"><?php echo $error; ?></div>
+      <div class="alert alert-danger"><?php echo htmlspecialchars($error); ?></div>
     <?php endif; ?>
 
     <div class="card shadow-sm">

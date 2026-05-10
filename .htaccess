@@ -1,0 +1,40 @@
+# ============================================================
+#  Training Management System — Apache Configuration
+# ============================================================
+
+Options -Indexes
+
+# ── HTTPS redirect (uncomment after SSL is set up on your host) ──
+# RewriteEngine On
+# RewriteCond %{HTTPS} off
+# RewriteRule ^(.*)$ https://%{HTTP_HOST}%{REQUEST_URI} [L,R=301]
+
+# ── Block access to sensitive files ──
+<FilesMatch "\.(sql|log|env|sh|bak|git)$">
+    Order deny,allow
+    Deny from all
+</FilesMatch>
+
+# ── Block access to hidden files/folders (e.g. .git) ──
+<FilesMatch "^\.">
+    Order deny,allow
+    Deny from all
+</FilesMatch>
+
+# ── Prevent PHP execution inside uploads folder ──
+<IfModule mod_rewrite.c>
+    RewriteEngine On
+    RewriteRule ^uploads/.*\.(php|php5|phtml|pl|py|cgi)$ - [F,L]
+</IfModule>
+
+# ── Security headers (backup in case PHP headers are missed) ──
+<IfModule mod_headers.c>
+    Header always set X-Frame-Options "SAMEORIGIN"
+    Header always set X-Content-Type-Options "nosniff"
+    Header always set X-XSS-Protection "1; mode=block"
+    Header always set Referrer-Policy "strict-origin-when-cross-origin"
+</IfModule>
+
+# ── PHP error display: off in production ──
+php_flag display_errors off
+php_flag log_errors on

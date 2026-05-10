@@ -6,19 +6,34 @@ require_role('student');
 
 $uid = $_SESSION['user_id'];
 
-$enrolled    = $conn->query("SELECT COUNT(*) FROM enrollments WHERE user_id=$uid")->fetch_row()[0];
-$completed   = $conn->query("SELECT COUNT(*) FROM enrollments WHERE user_id=$uid AND progress=100")->fetch_row()[0];
-$in_progress = $conn->query("SELECT COUNT(*) FROM enrollments WHERE user_id=$uid AND progress > 0 AND progress < 100")->fetch_row()[0];
-$certificates = $conn->query("SELECT COUNT(*) FROM certificates WHERE user_id=$uid")->fetch_row()[0] ?? 0;
+$enrolled_stmt = $conn->prepare("SELECT COUNT(*) FROM enrollments WHERE user_id=?");
+$enrolled_stmt->bind_param("i", $uid); $enrolled_stmt->execute();
+$enrolled = $enrolled_stmt->get_result()->fetch_row()[0];
 
-// Pending inquiries
-$pending_inq = $conn->query("SELECT COUNT(*) FROM inquiries WHERE user_id=$uid AND status='pending'")->fetch_row()[0];
+$completed_stmt = $conn->prepare("SELECT COUNT(*) FROM enrollments WHERE user_id=? AND progress=100");
+$completed_stmt->bind_param("i", $uid); $completed_stmt->execute();
+$completed = $completed_stmt->get_result()->fetch_row()[0];
+
+$inprog_stmt = $conn->prepare("SELECT COUNT(*) FROM enrollments WHERE user_id=? AND progress > 0 AND progress < 100");
+$inprog_stmt->bind_param("i", $uid); $inprog_stmt->execute();
+$in_progress = $inprog_stmt->get_result()->fetch_row()[0];
+
+$cert_stmt = $conn->prepare("SELECT COUNT(*) FROM certificates WHERE user_id=?");
+$cert_stmt->bind_param("i", $uid); $cert_stmt->execute();
+$certificates = $cert_stmt->get_result()->fetch_row()[0] ?? 0;
+
+$pinq_stmt = $conn->prepare("SELECT COUNT(*) FROM inquiries WHERE user_id=? AND status='pending'");
+$pinq_stmt->bind_param("i", $uid); $pinq_stmt->execute();
+$pending_inq = $pinq_stmt->get_result()->fetch_row()[0];
 
 // Unread messages
 $unread_msgs = 0;
 $mCheck = $conn->query("SHOW TABLES LIKE 'messages'");
 if($mCheck && $mCheck->num_rows > 0){
-    $unread_msgs = $conn->query("SELECT COUNT(*) FROM messages WHERE user_id=$uid AND is_read=0")->fetch_row()[0];
+    $unread_stmt = $conn->prepare("SELECT COUNT(*) FROM messages WHERE user_id=? AND is_read=0");
+    $unread_stmt->bind_param("i", $uid);
+    $unread_stmt->execute();
+    $unread_msgs = $unread_stmt->get_result()->fetch_row()[0];
 }
 
 // My enrolled courses

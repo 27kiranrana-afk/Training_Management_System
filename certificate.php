@@ -11,7 +11,7 @@ if($course_id <= 0){ header("Location: my_courses.php"); exit(); }
 
 // Verify the student has completed this course AND owns the enrollment
 $stmt = $conn->prepare("
-    SELECT enrollments.progress, users.name, courses.title, courses.duration, courses.fees, courses.id AS cid
+    SELECT enrollments.progress, enrollments.completed_at, users.name, courses.title, courses.duration, courses.fees, courses.id AS cid
     FROM enrollments
     JOIN users ON enrollments.user_id = users.id
     JOIN courses ON enrollments.course_id = courses.id
@@ -47,7 +47,7 @@ $display_duration = $is_free ? 'Self Paced' : $data['duration'];
       <strong>Duration:</strong> <?php echo htmlspecialchars($display_duration); ?>
     <?php endif; ?>
   </p>
-  <p class="text-muted mt-4">Date: <?php echo date("d M Y"); ?></p>
+  <p class="text-muted mt-4">Date: <?php echo $data['completed_at'] ? date("d M Y", strtotime($data['completed_at'])) : date("d M Y"); ?></p>
   <hr>
   <p class="text-muted small">Issued by Training Management System</p>
 </div>

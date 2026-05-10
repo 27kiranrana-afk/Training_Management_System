@@ -1,13 +1,20 @@
-# Sensitive config files - DO NOT push to GitHub
+# ── Sensitive config files — NEVER commit these ──
 config/db.php
 config/salesforce.php
 config/razorpay.php
 
-# Uploaded files
-uploads/videos/
-uploads/notes/
+# ── Uploaded user content ──
+uploads/videos/*
+uploads/notes/*
+!uploads/videos/.gitkeep
+!uploads/notes/.gitkeep
 
-# System files
+# ── PHP error logs ──
+*.log
+error_log
+
+# ── OS / editor junk ──
 .DS_Store
 Thumbs.db
-*.log
+.vscode/
+*.swp

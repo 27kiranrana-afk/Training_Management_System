@@ -144,13 +144,16 @@ foreach($tables as $sql){ @$conn->query($sql); }
 @$conn->query("DELETE FROM enrollments WHERE course_id NOT IN (SELECT id FROM courses)");
 @$conn->query("DELETE FROM enrollments WHERE user_id NOT IN (SELECT id FROM users)");
 
-// 4. Seed admin if not exists
+// 4. Seed admin if not exists — credentials read from environment variables
 $check = $conn->query("SELECT id FROM users WHERE role='admin' LIMIT 1");
 if($check->num_rows === 0){
-    $hash = password_hash("87654321", PASSWORD_DEFAULT);
-    $stmt = $conn->prepare("INSERT INTO users (name, email, password, role) VALUES ('Admin','27kiranrana@gmail.com',?,'admin')");
-    $stmt->bind_param("s", $hash);
+    $admin_email    = getenv('ADMIN_EMAIL')    ?: 'admin@tms.com';
+    $admin_password = getenv('ADMIN_PASSWORD') ?: 'ChangeMe@' . rand(1000,9999);
+    $hash = password_hash($admin_password, PASSWORD_DEFAULT);
+    $stmt = $conn->prepare("INSERT INTO users (name, email, password, role) VALUES ('Admin',?,?,'admin')");
+    $stmt->bind_param("ss", $admin_email, $hash);
     $stmt->execute();
+    error_log("TMS: Admin account created. Email: $admin_email — Set ADMIN_EMAIL and ADMIN_PASSWORD env vars before first run.");
 }
 
 // 4. Redirect

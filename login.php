@@ -21,7 +21,7 @@ if(!isset($_SESSION['user_id']) && isset($_COOKIE['remember_token'])){
     }
 }
 
-define('ADMIN_EMAIL',    '27kiranrana@gmail.com');
+define('ADMIN_EMAIL',    getenv('ADMIN_EMAIL') ?: '27kiranrana@gmail.com');
 define('MAX_ATTEMPTS',   5);
 define('LOCKOUT_MINUTES', 15);
 
@@ -98,7 +98,8 @@ if(isset($_POST['login'])){
                     $stmt2 = $conn->prepare("UPDATE users SET remember_token=? WHERE id=?");
                     $stmt2->bind_param("si", $token, $row['id']);
                     $stmt2->execute();
-                    setcookie('remember_token', $token, time() + (30 * 24 * 3600), '/', '', false, true);
+                    $is_https = (!empty($_SERVER['HTTPS']) && $_SERVER['HTTPS'] !== 'off');
+                    setcookie('remember_token', $token, time() + (30 * 24 * 3600), '/', '', $is_https, true);
                 }
 
                 header("Location: dashboard.php"); exit();

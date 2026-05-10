@@ -12,7 +12,9 @@ $conn->query("CREATE TABLE IF NOT EXISTS material_completions (
     user_id INT NOT NULL,
     material_id INT NOT NULL,
     completed_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
-    UNIQUE KEY unique_completion (user_id, material_id)
+    UNIQUE KEY unique_completion (user_id, material_id),
+    KEY idx_user_id (user_id),
+    KEY idx_material_id (material_id)
 )");
 
 // Auto-create certificates table with all required columns
@@ -22,7 +24,8 @@ $conn->query("CREATE TABLE IF NOT EXISTS certificates (
     user_id        INT          NOT NULL,
     course_id      INT          NOT NULL,
     certificate_no VARCHAR(50)  NOT NULL UNIQUE,
-    issued_at      TIMESTAMP    DEFAULT CURRENT_TIMESTAMP
+    issued_at      TIMESTAMP    DEFAULT CURRENT_TIMESTAMP,
+    KEY idx_user_course (user_id, course_id)
 )");
 
 // Add certificate_no column if missing (for existing tables)
@@ -38,7 +41,8 @@ $conn->query("CREATE TABLE IF NOT EXISTS payments (
     razorpay_payment_id VARCHAR(100)  DEFAULT NULL,
     amount              DECIMAL(10,2) NOT NULL DEFAULT 0,
     status              VARCHAR(20)   DEFAULT 'success',
-    paid_at             TIMESTAMP     DEFAULT CURRENT_TIMESTAMP
+    paid_at             TIMESTAMP     DEFAULT CURRENT_TIMESTAMP,
+    KEY idx_user_course (user_id, course_id)
 )");
 
 $id   = intval($_GET['id'] ?? 0);
@@ -153,7 +157,10 @@ if($role === 'student' && $enrolled){
     while($cr = $comp_result->fetch_assoc()) $completed_ids[] = $cr['material_id'];
 }
 
-$enrolled_count = $conn->query("SELECT COUNT(*) FROM enrollments WHERE course_id=$id")->fetch_row()[0];
+$enrolled_count_stmt = $conn->prepare("SELECT COUNT(*) FROM enrollments WHERE course_id=?");
+$enrolled_count_stmt->bind_param("i", $id);
+$enrolled_count_stmt->execute();
+$enrolled_count = $enrolled_count_stmt->get_result()->fetch_row()[0];
 
 // Current progress
 $current_progress = 0;
@@ -206,7 +213,12 @@ if($role === 'student' && $enrolled){
         </div>
       </div>
       <?php if($current_progress >= 100): ?>
-        <div class="alert alert-success mt-2">🎉 Course completed! <a href="certificate.php?course_id=<?php echo $id; ?>">Download Certificate</a></div>
+        <div class="alert alert-success mt-2">
+          🎉 Course completed!
+          <?php if($role === 'student'): ?>
+            <a href="certificate.php?course_id=<?php echo $id; ?>">Download Certificate</a>
+          <?php endif; ?>
+        </div>
       <?php endif; ?>
     </div>
     <?php endif; ?>

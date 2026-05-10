@@ -133,41 +133,32 @@ CREATE TABLE IF NOT EXISTS activity_log (
 
 -- ============================================================
 -- DEFAULT ADMIN ACCOUNT
+--    IMPORTANT: Change the password hash before importing!
+--    Generate a new hash by running this PHP snippet:
+--      php -r "echo password_hash('YourStrongPassword', PASSWORD_DEFAULT);"
+--    Then replace the hash below with your output.
+--
+--    Default credentials (CHANGE BEFORE GOING LIVE):
 --    Email:    admin@tms.com
---    Password: admin123  (change after first login!)
+--    Password: Change_Me_Now!
 -- ============================================================
-INSERT IGNORE INTO users (name, email, password, role)
+INSERT IGNORE INTO users (name, email, password, role, is_active)
 VALUES (
     'Admin',
     'admin@tms.com',
-    '$2y$10$92IXUNpkjO0rOQ5byMi.Ye4oKoEa3Ro9llC/.og/at2.uheWG/igi', -- admin123
-    'admin'
+    '$2y$10$92IXUNpkjO0rOQ5byMi.Ye4oKoEa3Ro9llC/.og/at2.uheWG/igi', -- REPLACE THIS HASH
+    'admin',
+    1
 );
 
 -- ============================================================
--- SAMPLE DATA (remove in production)
+-- SAMPLE DATA — REMOVE BEFORE PRODUCTION DEPLOYMENT
+-- Uncomment only for local development/testing
 -- ============================================================
 
 -- Sample trainer
-INSERT IGNORE INTO users (name, email, password, role)
-VALUES (
-    'John Trainer',
-    'trainer@tms.com',
-    '$2y$10$92IXUNpkjO0rOQ5byMi.Ye4oKoEa3Ro9llC/.og/at2.uheWG/igi', -- admin123
-    'trainer'
-);
-
+-- INSERT IGNORE INTO users (name, email, password, role) VALUES ('John Trainer', 'trainer@tms.com', '$2y$10$92IXUNpkjO0rOQ5byMi.Ye4oKoEa3Ro9llC/.og/at2.uheWG/igi', 'trainer');
 -- Sample student
-INSERT IGNORE INTO users (name, email, password, role)
-VALUES (
-    'Jane Student',
-    'student@tms.com',
-    '$2y$10$92IXUNpkjO0rOQ5byMi.Ye4oKoEa3Ro9llC/.og/at2.uheWG/igi', -- admin123
-    'student'
-);
-
--- Sample courses (created_by will be set to trainer id = 2)
-INSERT IGNORE INTO courses (title, description, duration, fees, created_by) VALUES
-('PHP & MySQL Basics',     'Learn PHP from scratch with MySQL database.',      '2 months', 2999.00, 2),
-('Web Design with Bootstrap', 'Build responsive websites using Bootstrap 5.', '1 month',  1999.00, 2),
-('Python for Beginners',   'Introduction to Python programming.',              '3 months', 3499.00, 2);
+-- INSERT IGNORE INTO users (name, email, password, role) VALUES ('Jane Student', 'student@tms.com', '$2y$10$92IXUNpkjO0rOQ5byMi.Ye4oKoEa3Ro9llC/.og/at2.uheWG/igi', 'student');
+-- Sample courses
+-- INSERT IGNORE INTO courses (title, description, duration, fees, created_by) VALUES ('PHP & MySQL Basics', 'Learn PHP from scratch with MySQL database.', '2 months', 2999.00, 2), ('Web Design with Bootstrap', 'Build responsive websites using Bootstrap 5.', '1 month', 1999.00, 2), ('Python for Beginners', 'Introduction to Python programming.', '3 months', 3499.00, 2);

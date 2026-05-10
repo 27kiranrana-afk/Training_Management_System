@@ -6,50 +6,60 @@ require_role('trainer');
 
 $uid = $_SESSION['user_id'];
 
-$my_courses_count = $conn->query("SELECT COUNT(*) FROM courses WHERE created_by=$uid")->fetch_row()[0];
-$my_students = $conn->query("
-    SELECT COUNT(DISTINCT enrollments.user_id)
-    FROM enrollments
-    JOIN courses ON enrollments.course_id = courses.id
-    WHERE courses.created_by = $uid
-")->fetch_row()[0];
-$completions = $conn->query("
-    SELECT COUNT(*)
-    FROM enrollments
-    JOIN courses ON enrollments.course_id = courses.id
-    WHERE courses.created_by = $uid AND enrollments.progress = 100
-")->fetch_row()[0];
+$my_courses_count = $conn->prepare("SELECT COUNT(*) FROM courses WHERE created_by=?");
+$my_courses_count->bind_param("i", $uid);
+$my_courses_count->execute();
+$my_courses_count = $my_courses_count->get_result()->fetch_row()[0];
+
+$my_students_stmt = $conn->prepare("SELECT COUNT(DISTINCT enrollments.user_id) FROM enrollments JOIN courses ON enrollments.course_id = courses.id WHERE courses.created_by = ?");
+$my_students_stmt->bind_param("i", $uid);
+$my_students_stmt->execute();
+$my_students = $my_students_stmt->get_result()->fetch_row()[0];
+
+$completions_stmt = $conn->prepare("SELECT COUNT(*) FROM enrollments JOIN courses ON enrollments.course_id = courses.id WHERE courses.created_by = ? AND enrollments.progress = 100");
+$completions_stmt->bind_param("i", $uid);
+$completions_stmt->execute();
+$completions = $completions_stmt->get_result()->fetch_row()[0];
 
 // Unread messages
 $unread_msgs = 0;
 $mCheck = $conn->query("SHOW TABLES LIKE 'messages'");
 if($mCheck && $mCheck->num_rows > 0){
-    $unread_msgs = $conn->query("SELECT COUNT(*) FROM messages WHERE user_id=$uid AND is_read=0")->fetch_row()[0];
+    $unread_stmt = $conn->prepare("SELECT COUNT(*) FROM messages WHERE user_id=? AND is_read=0");
+    $unread_stmt->bind_param("i", $uid);
+    $unread_stmt->execute();
+    $unread_msgs = $unread_stmt->get_result()->fetch_row()[0];
 }
 
 // My courses with student counts and fees
-$courses = $conn->query("
+$courses = $conn->prepare("
     SELECT courses.id, courses.title, courses.duration, courses.fees,
            COUNT(enrollments.id) AS enrolled_count,
            SUM(CASE WHEN enrollments.progress=100 THEN 1 ELSE 0 END) AS completed_count
     FROM courses
     LEFT JOIN enrollments ON enrollments.course_id = courses.id
-    WHERE courses.created_by = $uid
+    WHERE courses.created_by = ?
     GROUP BY courses.id
     ORDER BY courses.title ASC
 ");
+$courses->bind_param("i", $uid);
+$courses->execute();
+$courses = $courses->get_result();
 
 // Students in my courses with progress
-$students = $conn->query("
+$students = $conn->prepare("
     SELECT users.name AS student, courses.title AS course,
            enrollments.progress, enrollments.enrolled_at
     FROM enrollments
     JOIN users ON enrollments.user_id = users.id
     JOIN courses ON enrollments.course_id = courses.id
-    WHERE courses.created_by = $uid
+    WHERE courses.created_by = ?
     ORDER BY enrollments.progress ASC, courses.title ASC
     LIMIT 10
 ");
+$students->bind_param("i", $uid);
+$students->execute();
+$students = $students->get_result();
 ?>
 <?php include("../includes/header.php"); ?>
 

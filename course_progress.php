@@ -79,7 +79,7 @@ while($row = $result->fetch_assoc()){
             <th>Student</th>
             <th>Progress</th>
             <th>Status</th>
-            <th>Certificate</th>
+            <?php if($role === 'student'): ?><th>Certificate</th><?php endif; ?>
           </tr>
         </thead>
         <tbody>
@@ -105,6 +105,7 @@ while($row = $result->fetch_assoc()){
             ?>
             <span class="badge <?php echo $badge; ?>"><?php echo ucfirst($s['status']); ?></span>
           </td>
+          <?php if($role === 'student'): ?>
           <td>
             <?php if($s['status'] === 'completed'): ?>
               <a href="certificate.php?course_id=<?php echo $s['course_id']; ?>" class="btn btn-sm btn-success">🎓 Download</a>
@@ -112,6 +113,7 @@ while($row = $result->fetch_assoc()){
               <span class="text-muted small">Complete course to unlock</span>
             <?php endif; ?>
           </td>
+          <?php endif; ?>
         </tr>
         <?php endforeach; ?>
         </tbody>

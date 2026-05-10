@@ -1,3 +1,16 @@
+<?php
+// Security headers — sent before any HTML output
+if (!headers_sent()) {
+    header("X-Frame-Options: SAMEORIGIN");
+    header("X-Content-Type-Options: nosniff");
+    header("X-XSS-Protection: 1; mode=block");
+    header("Referrer-Policy: strict-origin-when-cross-origin");
+    // CSP: allows Bootstrap/Chart.js CDN, Razorpay, and inline scripts used by the app
+    header("Content-Security-Policy: default-src 'self'; script-src 'self' 'unsafe-inline' https://cdn.jsdelivr.net https://checkout.razorpay.com; style-src 'self' 'unsafe-inline' https://cdn.jsdelivr.net; frame-src https://www.youtube.com https://api.razorpay.com; img-src 'self' data:; connect-src 'self'");
+    // Uncomment once HTTPS is configured:
+    // header("Strict-Transport-Security: max-age=31536000; includeSubDomains");
+}
+?>
 <!DOCTYPE html>
 <html lang="en">
 <head>

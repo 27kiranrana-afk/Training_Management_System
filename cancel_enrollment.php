@@ -93,9 +93,13 @@ $del->bind_param("ii", $user_id, $course_id);
 $del->execute();
 
 // Remove material completions
-$conn->query("DELETE mc FROM material_completions mc
+$delMc = $conn->prepare("
+    DELETE mc FROM material_completions mc
     JOIN course_materials cm ON mc.material_id = cm.id
-    WHERE cm.course_id = $course_id AND mc.user_id = $user_id");
+    WHERE cm.course_id = ? AND mc.user_id = ?
+");
+$delMc->bind_param("ii", $course_id, $user_id);
+$delMc->execute();
 
 // Send confirmation message to student
 $title = "Enrollment Cancellation Received — " . $enrollment['title'];

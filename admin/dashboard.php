@@ -6,7 +6,7 @@ require_role('admin');
 
 $total_students    = $conn->query("SELECT COUNT(*) FROM users WHERE role='student'")->fetch_row()[0];
 $total_trainers    = $conn->query("SELECT COUNT(*) FROM users WHERE role='trainer'")->fetch_row()[0];
-$total_courses     = $conn->query("SELECT COUNT(*) FROM courses")->fetch_row()[0];
+$total_courses     = $conn->query("SELECT COUNT(*) FROM courses WHERE is_active=1")->fetch_row()[0];
 $total_enrollments = $conn->query("SELECT COUNT(*) FROM enrollments")->fetch_row()[0];
 $pending_inquiries = $conn->query("SELECT COUNT(*) FROM inquiries WHERE status='pending'")->fetch_row()[0];
 $completed         = $conn->query("SELECT COUNT(*) FROM enrollments WHERE progress=100")->fetch_row()[0];
@@ -16,13 +16,14 @@ if($rCheck && $rCheck->num_rows > 0){
     $pending_refunds = $conn->query("SELECT COUNT(*) FROM refund_requests WHERE status IN ('pending','processing')")->fetch_row()[0];
 }
 
-// Recent enrollments
+// Recent enrollments — use enrolled_at column
 $recent = $conn->query("
-    SELECT users.name AS student, courses.title AS course, enrollments.progress, enrollments.id
+    SELECT users.name AS student, courses.title AS course,
+           enrollments.progress, enrollments.enrolled_at
     FROM enrollments
     JOIN users ON enrollments.user_id = users.id
     JOIN courses ON enrollments.course_id = courses.id
-    ORDER BY enrollments.id DESC
+    ORDER BY enrollments.enrolled_at DESC
     LIMIT 5
 ");
 
@@ -31,9 +32,10 @@ $trainers = $conn->query("
     SELECT users.name, users.email,
            COUNT(courses.id) AS course_count
     FROM users
-    LEFT JOIN courses ON courses.created_by = users.id
-    WHERE users.role = 'trainer'
+    LEFT JOIN courses ON courses.created_by = users.id AND courses.is_active=1
+    WHERE users.role = 'trainer' AND users.is_active=1
     GROUP BY users.id
+    ORDER BY users.name ASC
 ");
 ?>
 <?php include("../includes/header.php"); ?>

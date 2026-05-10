@@ -15,9 +15,9 @@ if(isset($_POST['delete_course'])){
         $stmt = $conn->prepare("DELETE FROM courses WHERE id = ?");
         $stmt->bind_param("i", $id);
     } elseif($_SESSION['role'] === 'trainer'){
-        // Trainer can delete their own courses OR unassigned courses
-        $stmt = $conn->prepare("DELETE FROM courses WHERE id = ? AND (created_by = ? OR created_by IS NULL)");
-        $stmt->bind_param("iii", $id, $uid, $uid);
+        // Trainer can only delete their own courses
+        $stmt = $conn->prepare("DELETE FROM courses WHERE id = ? AND created_by = ?");
+        $stmt->bind_param("ii", $id, $uid);
     } else {
         header("Location: view_courses.php"); exit();
     }
@@ -108,8 +108,7 @@ if($search){
       <td>
         <?php
           $can_edit = $_SESSION['role']==='admin' 
-                   || $row['created_by']==$uid 
-                   || ($_SESSION['role']==='trainer' && $row['created_by'] === null);
+                   || $row['created_by']==$uid;
         ?>
         <?php if($can_edit): ?>
           <a href="edit_course.php?id=<?php echo $row['id']; ?>" class="btn btn-sm btn-warning">Edit</a>

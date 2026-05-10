@@ -61,7 +61,7 @@ $_SESSION['rzp_amount']    = $course['fees'];
       </div>
 
       <div class="alert alert-info py-2">
-        <small>🔒 Secure payment powered by Razorpay. Test mode — no real money charged.</small>
+        <small>🔒 Secure payment powered by Razorpay.</small>
       </div>
 
       <button id="rzp-pay-btn" class="btn btn-success w-100 btn-lg">
@@ -73,7 +73,8 @@ $_SESSION['rzp_amount']    = $course['fees'];
       </a>
     </div>
 
-    <!-- Test card info -->
+    <!-- Test card info — remove this block in production -->
+    <?php if(strpos(RZP_KEY_ID, 'rzp_test_') === 0): ?>
     <div class="card mt-3 p-3 border-warning">
       <h6 class="text-warning">🧪 Test Mode — Use these details:</h6>
       <small>
@@ -83,6 +84,7 @@ $_SESSION['rzp_amount']    = $course['fees'];
         <strong>OTP:</strong> 1234
       </small>
     </div>
+    <?php endif; ?>
   </div>
 </div>
 

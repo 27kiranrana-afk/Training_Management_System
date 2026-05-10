@@ -55,8 +55,16 @@ if(isset($_GET['export'])){
         ORDER BY users.name
     ");
     while($row = $rows->fetch_assoc()){
-        fputcsv($out, [$row['name'], $row['email'], $row['title'],
-                       $row['progress'].'%', ucfirst($row['status']), $row['enrolled_at']]);
+        // Prefix cells starting with formula chars to prevent CSV injection
+        $safe = [];
+        foreach([$row['name'], $row['email'], $row['title'], $row['progress'].'%', ucfirst($row['status']), $row['enrolled_at']] as $cell){
+            $cell = (string)$cell;
+            if(in_array(substr($cell, 0, 1), ['=','+','-','@',"\t","\r"])){
+                $cell = "'" . $cell;
+            }
+            $safe[] = $cell;
+        }
+        fputcsv($out, $safe);
     }
     fclose($out); exit();
 }

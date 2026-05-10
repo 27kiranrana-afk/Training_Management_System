@@ -11,9 +11,9 @@ if($id <= 0){ header("Location: view_courses.php"); exit(); }
 
 $success = $error = "";
 
-// Fetch course
+// Fetch course — trainers can only edit courses they personally created
 if($_SESSION['role'] === 'trainer'){
-    $stmt = $conn->prepare("SELECT * FROM courses WHERE id=? AND (created_by=? OR created_by IS NULL)");
+    $stmt = $conn->prepare("SELECT * FROM courses WHERE id=? AND created_by=?");
     $stmt->bind_param("ii", $id, $uid);
 } else {
     $stmt = $conn->prepare("SELECT * FROM courses WHERE id=?");
@@ -67,13 +67,19 @@ if(isset($_POST['update'])){
                 $ext   = strtolower(pathinfo($fname, PATHINFO_EXTENSION));
                 $allowed_video = ['mp4','webm','mkv','avi'];
                 $allowed_notes = ['pdf','doc','docx','ppt','pptx','txt'];
+                $allowed_video_mime = ['video/mp4','video/webm','video/x-matroska','video/x-msvideo','video/avi'];
+                $allowed_notes_mime = ['application/pdf','application/msword','application/vnd.openxmlformats-officedocument.wordprocessingml.document','application/vnd.ms-powerpoint','application/vnd.openxmlformats-officedocument.presentationml.presentation','text/plain'];
 
-                if($type === 'video_file' && in_array($ext, $allowed_video)){
-                    $dest = 'uploads/videos/' . uniqid() . '_' . basename($fname);
+                $finfo    = finfo_open(FILEINFO_MIME_TYPE);
+                $detected = finfo_file($finfo, $tmp);
+                finfo_close($finfo);
+
+                if($type === 'video_file' && in_array($ext, $allowed_video) && in_array($detected, $allowed_video_mime)){
+                    $dest = 'uploads/videos/' . bin2hex(random_bytes(8)) . '_' . preg_replace('/[^a-zA-Z0-9._-]/', '_', basename($fname));
                     move_uploaded_file($tmp, $dest);
                     $content = $dest;
-                } elseif($type === 'notes' && in_array($ext, $allowed_notes)){
-                    $dest = 'uploads/notes/' . uniqid() . '_' . basename($fname);
+                } elseif($type === 'notes' && in_array($ext, $allowed_notes) && in_array($detected, $allowed_notes_mime)){
+                    $dest = 'uploads/notes/' . bin2hex(random_bytes(8)) . '_' . preg_replace('/[^a-zA-Z0-9._-]/', '_', basename($fname));
                     move_uploaded_file($tmp, $dest);
                     $content = $dest;
                 }

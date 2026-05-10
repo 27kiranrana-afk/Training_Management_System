@@ -38,6 +38,9 @@ if(isset($_POST['delete_user'])){
 $filter = $_GET['role'] ?? 'all';
 $search = trim($_GET['search'] ?? '');
 
+// Whitelist filter to prevent SQL manipulation
+if(!in_array($filter, ['all', 'student', 'trainer'])) $filter = 'all';
+
 $where  = "WHERE role != 'admin'";
 $params = [];
 $types  = '';
