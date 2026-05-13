@@ -10,14 +10,23 @@ $preselect = in_array($_GET['role'] ?? '', ['student','trainer']) ? $_GET['role'
 if(isset($_POST['submit'])){
     csrf_verify();
     $name     = trim($_POST['name']);
-    $email    = trim($_POST['email']);
-    $password = password_hash($_POST['password'], PASSWORD_DEFAULT);
+    $email    = strtolower(trim($_POST['email']));
+    $password = $_POST['password'];
     $role     = $_POST['role'];
 
-    // Hard block admin self-registration
-    if($role === 'admin'){
+    // Input validation
+    if(strlen($name) < 2 || strlen($name) > 100){
+        $error = "Name must be between 2 and 100 characters.";
+    } elseif(!filter_var($email, FILTER_VALIDATE_EMAIL)){
+        $error = "Please enter a valid email address.";
+    } elseif(strlen($password) < 8){
+        $error = "Password must be at least 8 characters.";
+    } elseif(!preg_match('/[A-Z]/', $password) || !preg_match('/[0-9]/', $password)){
+        $error = "Password must contain at least one uppercase letter and one number.";
+    } elseif($role === 'admin'){
         $error = "Admin accounts cannot be self-registered.";
     } else {
+        $password = password_hash($password, PASSWORD_DEFAULT);
         $check = $conn->prepare("SELECT id FROM users WHERE email = ?");
         $check->bind_param("s", $email);
         $check->execute();

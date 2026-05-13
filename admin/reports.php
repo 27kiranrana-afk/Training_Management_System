@@ -17,9 +17,12 @@ $course_stats = $conn->query("
 $chart_labels = $chart_enrolled = $chart_completed = [];
 while($r = $course_stats->fetch_assoc()){
     $chart_labels[]    = $r['title'];
-    $chart_enrolled[]  = $r['total'];
-    $chart_completed[] = $r['completed'];
+    $chart_enrolled[]  = (int)$r['total'];
+    $chart_completed[] = (int)$r['completed'];
 }
+$chart_labels_json    = json_encode($chart_labels,    JSON_HEX_TAG | JSON_HEX_QUOT | JSON_HEX_AMP);
+$chart_enrolled_json  = json_encode($chart_enrolled,  JSON_HEX_TAG | JSON_HEX_QUOT | JSON_HEX_AMP);
+$chart_completed_json = json_encode($chart_completed, JSON_HEX_TAG | JSON_HEX_QUOT | JSON_HEX_AMP);
 
 // Role distribution (for pie chart)
 $students = $conn->query("SELECT COUNT(*) FROM users WHERE role='student'")->fetch_row()[0];
@@ -40,7 +43,8 @@ while($m = $monthly->fetch_assoc()){
     $month_data[]   = $m['total'];
 }
 
-// Export CSV
+$month_labels_json = json_encode($month_labels, JSON_HEX_TAG | JSON_HEX_QUOT | JSON_HEX_AMP);
+$month_data_json   = json_encode($month_data,   JSON_HEX_TAG | JSON_HEX_QUOT | JSON_HEX_AMP);
 if(isset($_GET['export'])){
     header('Content-Type: text/csv');
     header('Content-Disposition: attachment; filename="students_report_'.date('Y-m-d').'.csv"');
@@ -151,9 +155,9 @@ if(isset($_GET['export'])){
 <!-- Chart.js -->
 <script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.0/dist/chart.umd.min.js"></script>
 <script>
-const labels    = <?php echo json_encode($chart_labels); ?>;
-const enrolled  = <?php echo json_encode($chart_enrolled); ?>;
-const completed = <?php echo json_encode($chart_completed); ?>;
+const labels    = <?php echo $chart_labels_json; ?>;
+const enrolled  = <?php echo $chart_enrolled_json; ?>;
+const completed = <?php echo $chart_completed_json; ?>;
 
 // Bar chart
 new Chart(document.getElementById('courseChart'), {
@@ -182,10 +186,10 @@ new Chart(document.getElementById('roleChart'), {
 new Chart(document.getElementById('monthChart'), {
   type: 'line',
   data: {
-    labels: <?php echo json_encode($month_labels); ?>,
+    labels: <?php echo $month_labels_json; ?>,
     datasets: [{
       label: 'Enrollments',
-      data: <?php echo json_encode($month_data); ?>,
+      data: <?php echo $month_data_json; ?>,
       borderColor: 'rgba(255,99,132,1)',
       backgroundColor: 'rgba(255,99,132,0.1)',
       fill: true, tension: 0.4

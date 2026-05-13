@@ -22,17 +22,26 @@ if(isset($_POST['update_profile'])){
     $address = trim($_POST['address']);
     $gender  = $_POST['gender'] ?? '';
 
-    $stmt = $conn->prepare("UPDATE users SET name=?, phone=?, address=?, gender=? WHERE id=?");
-    $stmt->bind_param("ssssi", $name, $phone, $address, $gender, $uid);
-    if($stmt->execute()){
-        $_SESSION['user'] = $name;
-        $success = "Profile updated successfully!";
-        $stmt2 = $conn->prepare("SELECT * FROM users WHERE id=?");
-        $stmt2->bind_param("i", $uid);
-        $stmt2->execute();
-        $user = $stmt2->get_result()->fetch_assoc();
+    // Validate input lengths
+    if(strlen($name) < 2 || strlen($name) > 100){
+        $error = "Name must be between 2 and 100 characters.";
+    } elseif(strlen($phone) > 20){
+        $error = "Phone number is too long.";
+    } elseif(!in_array($gender, ['', 'male', 'female', 'other'])){
+        $error = "Invalid gender selection.";
     } else {
-        $error = "Update failed.";
+        $stmt = $conn->prepare("UPDATE users SET name=?, phone=?, address=?, gender=? WHERE id=?");
+        $stmt->bind_param("ssssi", $name, $phone, $address, $gender, $uid);
+        if($stmt->execute()){
+            $_SESSION['user'] = $name;
+            $success = "Profile updated successfully!";
+            $stmt2 = $conn->prepare("SELECT * FROM users WHERE id=?");
+            $stmt2->bind_param("i", $uid);
+            $stmt2->execute();
+            $user = $stmt2->get_result()->fetch_assoc();
+        } else {
+            $error = "Update failed.";
+        }
     }
 }
 
@@ -47,8 +56,10 @@ if(isset($_POST['change_password'])){
         $error = "Current password is incorrect.";
     } elseif($new !== $confirm){
         $error = "New passwords do not match.";
-    } elseif(strlen($new) < 6){
-        $error = "Password must be at least 6 characters.";
+    } elseif(strlen($new) < 8){
+        $error = "Password must be at least 8 characters.";
+    } elseif(!preg_match('/[A-Z]/', $new) || !preg_match('/[0-9]/', $new)){
+        $error = "Password must contain at least one uppercase letter and one number.";
     } else {
         $hash = password_hash($new, PASSWORD_DEFAULT);
         $stmt = $conn->prepare("UPDATE users SET password=? WHERE id=?");

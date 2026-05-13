@@ -49,6 +49,9 @@ function clear_attempts($conn, $email, $ip){
     $stmt->execute();
 }
 
+// Clean up old login attempts (older than LOCKOUT_MINUTES) to prevent table bloat
+$conn->query("DELETE FROM login_attempts WHERE attempted_at < DATE_SUB(NOW(), INTERVAL " . LOCKOUT_MINUTES . " MINUTE)");
+
 if(isset($_POST['login'])){
     csrf_verify();
     $email         = strtolower(trim($_POST['email']));

@@ -3,11 +3,9 @@
 --  Import this file in phpMyAdmin: Import > Choose File
 -- ============================================================
 
-CREATE DATABASE IF NOT EXISTS training_db
-    CHARACTER SET utf8mb4
-    COLLATE utf8mb4_unicode_ci;
-
-USE training_db;
+-- NOTE: Do NOT run CREATE DATABASE here on shared hosting (e.g. InfinityFree).
+-- The database is already created via the hosting control panel.
+-- Just import this file directly into your existing database.
 
 -- ============================================================
 -- 1. USERS
@@ -130,6 +128,19 @@ CREATE TABLE IF NOT EXISTS activity_log (
     created_at   TIMESTAMP     DEFAULT CURRENT_TIMESTAMP,
     FOREIGN KEY (user_id) REFERENCES users(id) ON DELETE CASCADE
 );
+
+-- ============================================================
+-- 8. PERFORMANCE INDEXES
+-- ============================================================
+CREATE INDEX IF NOT EXISTS idx_users_email       ON users(email);
+CREATE INDEX IF NOT EXISTS idx_users_role        ON users(role);
+CREATE INDEX IF NOT EXISTS idx_courses_created_by ON courses(created_by);
+CREATE INDEX IF NOT EXISTS idx_enrollments_user  ON enrollments(user_id);
+CREATE INDEX IF NOT EXISTS idx_enrollments_course ON enrollments(course_id);
+CREATE INDEX IF NOT EXISTS idx_enrollments_progress ON enrollments(progress);
+CREATE INDEX IF NOT EXISTS idx_inquiries_user    ON inquiries(user_id);
+CREATE INDEX IF NOT EXISTS idx_inquiries_status  ON inquiries(status);
+CREATE INDEX IF NOT EXISTS idx_activity_user     ON activity_log(user_id);
 
 -- ============================================================
 -- DEFAULT ADMIN ACCOUNT

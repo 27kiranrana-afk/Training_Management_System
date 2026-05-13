@@ -26,8 +26,10 @@ if(isset($_POST['reset']) && $valid){
     $new     = $_POST['new_password'];
     $confirm = $_POST['confirm_password'];
 
-    if(strlen($new) < 6){
-        $error = "Password must be at least 6 characters.";
+    if(strlen($new) < 8){
+        $error = "Password must be at least 8 characters.";
+    } elseif(!preg_match('/[A-Z]/', $new) || !preg_match('/[0-9]/', $new)){
+        $error = "Password must contain at least one uppercase letter and one number.";
     } elseif($new !== $confirm){
         $error = "Passwords do not match.";
     } else {
@@ -63,11 +65,11 @@ if(isset($_POST['reset']) && $valid){
           <?php csrf_field(); ?>
           <div class="mb-3">
             <label>New Password</label>
-            <input type="password" name="new_password" class="form-control" minlength="6" required>
+            <input type="password" name="new_password" class="form-control" minlength="8" required>
           </div>
           <div class="mb-3">
             <label>Confirm New Password</label>
-            <input type="password" name="confirm_password" class="form-control" required>
+            <input type="password" name="confirm_password" class="form-control" minlength="8" required>
           </div>
           <button type="submit" name="reset" class="btn btn-success w-100">Reset Password</button>
         </form>

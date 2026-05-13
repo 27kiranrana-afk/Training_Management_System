@@ -42,13 +42,13 @@ if($_SESSION['role'] === 'student'){
 }
 
 if($search){
-    $stmt = $conn->prepare("SELECT courses.*, users.name AS trainer_name FROM courses LEFT JOIN users ON courses.created_by=users.id WHERE courses.title LIKE ? ORDER BY courses.title ASC");
-    $like = "%$search%";
+    $stmt = $conn->prepare("SELECT courses.*, users.name AS trainer_name FROM courses LEFT JOIN users ON courses.created_by=users.id WHERE courses.is_active=1 AND courses.title LIKE ? ORDER BY courses.title ASC");
+    $like = "%" . $search . "%";
     $stmt->bind_param("s", $like);
     $stmt->execute();
     $result = $stmt->get_result();
 } else {
-    $result = $conn->query("SELECT courses.*, users.name AS trainer_name FROM courses LEFT JOIN users ON courses.created_by=users.id ORDER BY courses.title ASC");
+    $result = $conn->query("SELECT courses.*, users.name AS trainer_name FROM courses LEFT JOIN users ON courses.created_by=users.id WHERE courses.is_active=1 ORDER BY courses.title ASC");
 }
 ?>
 <?php include("includes/header.php"); ?>

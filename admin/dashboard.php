@@ -189,6 +189,9 @@ while($r = $course_stats->fetch_assoc()){
     $cenrolled[]  = (int)$r['total'];
     $ccompleted[] = (int)$r['completed'];
 }
+$clabels_json    = json_encode($clabels,    JSON_HEX_TAG | JSON_HEX_QUOT | JSON_HEX_AMP);
+$cenrolled_json  = json_encode($cenrolled,  JSON_HEX_TAG | JSON_HEX_QUOT | JSON_HEX_AMP);
+$ccompleted_json = json_encode($ccompleted, JSON_HEX_TAG | JSON_HEX_QUOT | JSON_HEX_AMP);
 ?>
 <div class="row g-4 mt-2">
   <div class="col-md-4">
@@ -210,9 +213,9 @@ while($r = $course_stats->fetch_assoc()){
 new Chart(document.getElementById('courseChart'), {
   type: 'doughnut',
   data: {
-    labels: <?php echo json_encode($clabels); ?>,
+    labels: <?php echo $clabels_json; ?>,
     datasets: [{
-      data: <?php echo json_encode($cenrolled); ?>,
+      data: <?php echo $cenrolled_json; ?>,
       backgroundColor: [
         'rgba(54,162,235,0.8)','rgba(75,192,92,0.8)','rgba(255,99,132,0.8)',
         'rgba(255,206,86,0.8)','rgba(153,102,255,0.8)','rgba(255,159,64,0.8)'

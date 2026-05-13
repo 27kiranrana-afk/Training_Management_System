@@ -1,31 +1,35 @@
 <?php
 session_start();
 include("config/db.php");
+include("includes/auth.php");
 
 // ── Auto-setup: runs silently on every visit, safe to repeat ──
 
-// 1. Add missing columns to existing tables
+// 1. Add missing columns to existing tables (compatible with older MySQL)
 $migrations = [
-    "ALTER TABLE users ADD COLUMN IF NOT EXISTS phone VARCHAR(20) DEFAULT NULL",
-    "ALTER TABLE users ADD COLUMN IF NOT EXISTS address TEXT DEFAULT NULL",
-    "ALTER TABLE users ADD COLUMN IF NOT EXISTS profile_pic VARCHAR(255) DEFAULT NULL",
-    "ALTER TABLE users ADD COLUMN IF NOT EXISTS is_active TINYINT(1) NOT NULL DEFAULT 1",
-    "ALTER TABLE users ADD COLUMN IF NOT EXISTS remember_token VARCHAR(100) DEFAULT NULL",
-    "ALTER TABLE users ADD COLUMN IF NOT EXISTS gender ENUM('male','female','other') DEFAULT NULL",
-    "ALTER TABLE users ADD COLUMN IF NOT EXISTS updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP",
-    "ALTER TABLE courses ADD COLUMN IF NOT EXISTS description TEXT DEFAULT NULL",
-    "ALTER TABLE courses ADD COLUMN IF NOT EXISTS fees DECIMAL(10,2) DEFAULT 0.00",
-    "ALTER TABLE courses ADD COLUMN IF NOT EXISTS is_active TINYINT(1) NOT NULL DEFAULT 1",
-    "ALTER TABLE courses ADD COLUMN IF NOT EXISTS created_by INT DEFAULT NULL",
-    "ALTER TABLE enrollments ADD COLUMN IF NOT EXISTS attendance INT NOT NULL DEFAULT 0",
-    "ALTER TABLE enrollments ADD COLUMN IF NOT EXISTS total_classes INT NOT NULL DEFAULT 0",
-    "ALTER TABLE enrollments ADD COLUMN IF NOT EXISTS status ENUM('enrolled','completed','dropped') DEFAULT 'enrolled'",
-    "ALTER TABLE enrollments ADD COLUMN IF NOT EXISTS completed_at TIMESTAMP NULL DEFAULT NULL",
-    "ALTER TABLE enrollments ADD COLUMN IF NOT EXISTS enrolled_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP",
-    "ALTER TABLE inquiries ADD COLUMN IF NOT EXISTS admin_reply TEXT DEFAULT NULL",
-    "ALTER TABLE inquiries ADD COLUMN IF NOT EXISTS resolved_at TIMESTAMP NULL DEFAULT NULL",
+    ['users',       'phone',         "ALTER TABLE users ADD COLUMN phone VARCHAR(20) DEFAULT NULL"],
+    ['users',       'address',       "ALTER TABLE users ADD COLUMN address TEXT DEFAULT NULL"],
+    ['users',       'profile_pic',   "ALTER TABLE users ADD COLUMN profile_pic VARCHAR(255) DEFAULT NULL"],
+    ['users',       'is_active',     "ALTER TABLE users ADD COLUMN is_active TINYINT(1) NOT NULL DEFAULT 1"],
+    ['users',       'remember_token',"ALTER TABLE users ADD COLUMN remember_token VARCHAR(100) DEFAULT NULL"],
+    ['users',       'gender',        "ALTER TABLE users ADD COLUMN gender ENUM('male','female','other') DEFAULT NULL"],
+    ['users',       'updated_at',    "ALTER TABLE users ADD COLUMN updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP"],
+    ['courses',     'description',   "ALTER TABLE courses ADD COLUMN description TEXT DEFAULT NULL"],
+    ['courses',     'fees',          "ALTER TABLE courses ADD COLUMN fees DECIMAL(10,2) DEFAULT 0.00"],
+    ['courses',     'is_active',     "ALTER TABLE courses ADD COLUMN is_active TINYINT(1) NOT NULL DEFAULT 1"],
+    ['courses',     'created_by',    "ALTER TABLE courses ADD COLUMN created_by INT DEFAULT NULL"],
+    ['enrollments', 'attendance',    "ALTER TABLE enrollments ADD COLUMN attendance INT NOT NULL DEFAULT 0"],
+    ['enrollments', 'total_classes', "ALTER TABLE enrollments ADD COLUMN total_classes INT NOT NULL DEFAULT 0"],
+    ['enrollments', 'status',        "ALTER TABLE enrollments ADD COLUMN status ENUM('enrolled','completed','dropped') DEFAULT 'enrolled'"],
+    ['enrollments', 'completed_at',  "ALTER TABLE enrollments ADD COLUMN completed_at TIMESTAMP NULL DEFAULT NULL"],
+    ['enrollments', 'enrolled_at',   "ALTER TABLE enrollments ADD COLUMN enrolled_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP"],
+    ['inquiries',   'admin_reply',   "ALTER TABLE inquiries ADD COLUMN admin_reply TEXT DEFAULT NULL"],
+    ['inquiries',   'resolved_at',   "ALTER TABLE inquiries ADD COLUMN resolved_at TIMESTAMP NULL DEFAULT NULL"],
 ];
-foreach($migrations as $sql){ @$conn->query($sql); }
+foreach($migrations as [$table, $column, $sql]){
+    $check = $conn->query("SELECT COUNT(*) FROM INFORMATION_SCHEMA.COLUMNS WHERE TABLE_SCHEMA=DATABASE() AND TABLE_NAME='$table' AND COLUMN_NAME='$column'");
+    if($check && $check->fetch_row()[0] == 0){ @$conn->query($sql); }
+}
 
 // 2. Create tables that might not exist yet
 $tables = [
@@ -160,7 +164,7 @@ if($check->num_rows === 0){
 if(isset($_SESSION['user_id'])){
     header("Location: dashboard.php");
 } else {
-    header("Location: login.php");
+    header("Location: home.php");
 }
 exit();
 ?>

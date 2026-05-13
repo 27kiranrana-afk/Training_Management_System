@@ -43,17 +43,17 @@ if(isset($_GET['resolve'])){
     header("Location: manage_inquiries.php?done=1"); exit();
 }
 
-// Filter
+// Filter — whitelist values only
 $filter = $_GET['filter'] ?? 'all';
-$where  = $filter === 'pending' ? "WHERE inquiries.status='pending'" : ($filter === 'resolved' ? "WHERE inquiries.status='resolved'" : "");
+if(!in_array($filter, ['all', 'pending', 'resolved'])) $filter = 'all';
 
-$result = $conn->query("
-    SELECT inquiries.*, users.name AS student_name, users.email
-    FROM inquiries
-    JOIN users ON inquiries.user_id = users.id
-    $where
-    ORDER BY FIELD(inquiries.status,'pending','resolved'), inquiries.created_at DESC
-");
+if($filter === 'pending'){
+    $result = $conn->query("SELECT inquiries.*, users.name AS student_name, users.email FROM inquiries JOIN users ON inquiries.user_id = users.id WHERE inquiries.status='pending' ORDER BY inquiries.created_at DESC");
+} elseif($filter === 'resolved'){
+    $result = $conn->query("SELECT inquiries.*, users.name AS student_name, users.email FROM inquiries JOIN users ON inquiries.user_id = users.id WHERE inquiries.status='resolved' ORDER BY inquiries.created_at DESC");
+} else {
+    $result = $conn->query("SELECT inquiries.*, users.name AS student_name, users.email FROM inquiries JOIN users ON inquiries.user_id = users.id ORDER BY FIELD(inquiries.status,'pending','resolved'), inquiries.created_at DESC");
+}
 
 $pending_count  = $conn->query("SELECT COUNT(*) FROM inquiries WHERE status='pending'")->fetch_row()[0];
 $resolved_count = $conn->query("SELECT COUNT(*) FROM inquiries WHERE status='resolved'")->fetch_row()[0];

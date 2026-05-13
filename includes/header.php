@@ -31,7 +31,7 @@ if(!defined('BASE_URL')) include_once __DIR__ . '/base.php';
         </button>
         <div class="collapse navbar-collapse" id="navMenu">
             <ul class="navbar-nav ms-auto">
-                <li class="nav-item"><a class="nav-link" href="<?php echo BASE_URL; ?>dashboard.php">Home</a></li>
+                <li class="nav-item"><a class="nav-link" href="<?php echo BASE_URL; ?>home.php">Home</a></li>
                 <?php if(isset($_SESSION['user'])): ?>
                     <li class="nav-item"><a class="nav-link" href="<?php echo BASE_URL; ?>profile.php">👤 Profile</a></li>
                     <?php if(in_array($_SESSION['role'] ?? '', ['student','trainer'])):
