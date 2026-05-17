@@ -66,7 +66,7 @@ $my_courses = $courses->get_result();
 <!-- Stats -->
 <div class="row g-3 mb-4">
   <div class="col-6 col-md-3">
-    <a href="../my_courses.php" class="text-decoration-none">
+    <a href="../my_courses.php?filter=enrolled" class="text-decoration-none">
       <div class="card text-white bg-primary text-center p-3 h-100">
         <div class="fs-2 fw-bold"><?php echo $enrolled; ?></div>
         <div>Enrolled</div>
@@ -74,7 +74,7 @@ $my_courses = $courses->get_result();
     </a>
   </div>
   <div class="col-6 col-md-3">
-    <a href="../my_courses.php" class="text-decoration-none">
+    <a href="../my_courses.php?filter=inprogress" class="text-decoration-none">
       <div class="card text-white bg-warning text-center p-3 h-100">
         <div class="fs-2 fw-bold"><?php echo $in_progress; ?></div>
         <div>In Progress</div>
@@ -82,7 +82,7 @@ $my_courses = $courses->get_result();
     </a>
   </div>
   <div class="col-6 col-md-3">
-    <a href="../my_courses.php" class="text-decoration-none">
+    <a href="../my_courses.php?filter=completed" class="text-decoration-none">
       <div class="card text-white bg-success text-center p-3 h-100">
         <div class="fs-2 fw-bold"><?php echo $completed; ?></div>
         <div>Completed</div>

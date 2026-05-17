@@ -29,17 +29,59 @@ $conn->query("CREATE TABLE IF NOT EXISTS messages (
 
 $user_id = $_SESSION['user_id'];
 
-$stmt = $conn->prepare("
-    SELECT courses.id, courses.title, courses.duration, courses.fees,
-           enrollments.id AS enroll_id, enrollments.progress, enrollments.enrolled_at,
-           users.name AS trainer_name
-    FROM enrollments
-    JOIN courses ON enrollments.course_id = courses.id
-    LEFT JOIN users ON courses.created_by = users.id
-    WHERE enrollments.user_id = ?
-    ORDER BY enrollments.id DESC
-");
-$stmt->bind_param("i", $user_id);
+// Filter by status
+$filter = $_GET['filter'] ?? 'all';
+if(!in_array($filter, ['all','enrolled','inprogress','completed'])) $filter = 'all';
+
+if($filter === 'enrolled'){
+    $stmt = $conn->prepare("
+        SELECT courses.id, courses.title, courses.duration, courses.fees,
+               enrollments.id AS enroll_id, enrollments.progress, enrollments.enrolled_at,
+               users.name AS trainer_name
+        FROM enrollments
+        JOIN courses ON enrollments.course_id = courses.id
+        LEFT JOIN users ON courses.created_by = users.id
+        WHERE enrollments.user_id = ?
+        ORDER BY enrollments.id DESC
+    ");
+    $stmt->bind_param("i", $user_id);
+} elseif($filter === 'inprogress'){
+    $stmt = $conn->prepare("
+        SELECT courses.id, courses.title, courses.duration, courses.fees,
+               enrollments.id AS enroll_id, enrollments.progress, enrollments.enrolled_at,
+               users.name AS trainer_name
+        FROM enrollments
+        JOIN courses ON enrollments.course_id = courses.id
+        LEFT JOIN users ON courses.created_by = users.id
+        WHERE enrollments.user_id = ? AND enrollments.progress > 0 AND enrollments.progress < 100
+        ORDER BY enrollments.id DESC
+    ");
+    $stmt->bind_param("i", $user_id);
+} elseif($filter === 'completed'){
+    $stmt = $conn->prepare("
+        SELECT courses.id, courses.title, courses.duration, courses.fees,
+               enrollments.id AS enroll_id, enrollments.progress, enrollments.enrolled_at,
+               users.name AS trainer_name
+        FROM enrollments
+        JOIN courses ON enrollments.course_id = courses.id
+        LEFT JOIN users ON courses.created_by = users.id
+        WHERE enrollments.user_id = ? AND enrollments.progress = 100
+        ORDER BY enrollments.id DESC
+    ");
+    $stmt->bind_param("i", $user_id);
+} else {
+    $stmt = $conn->prepare("
+        SELECT courses.id, courses.title, courses.duration, courses.fees,
+               enrollments.id AS enroll_id, enrollments.progress, enrollments.enrolled_at,
+               users.name AS trainer_name
+        FROM enrollments
+        JOIN courses ON enrollments.course_id = courses.id
+        LEFT JOIN users ON courses.created_by = users.id
+        WHERE enrollments.user_id = ?
+        ORDER BY enrollments.id DESC
+    ");
+    $stmt->bind_param("i", $user_id);
+}
 $stmt->execute();
 $result = $stmt->get_result();
 
@@ -54,6 +96,22 @@ while($rrow = $rr_result->fetch_assoc()) $refund_requested[] = $rrow['course_id'
 <?php include("includes/header.php"); ?>
 
 <h3>My Courses</h3>
+
+<!-- Filter Tabs -->
+<ul class="nav nav-pills mb-3 mt-2">
+  <li class="nav-item">
+    <a class="nav-link <?php echo $filter==='all'?'active':''; ?>" href="my_courses.php">All</a>
+  </li>
+  <li class="nav-item">
+    <a class="nav-link <?php echo $filter==='enrolled'?'active bg-primary':''; ?>" href="my_courses.php?filter=enrolled">🔵 Enrolled</a>
+  </li>
+  <li class="nav-item">
+    <a class="nav-link <?php echo $filter==='inprogress'?'active bg-warning text-dark':''; ?>" href="my_courses.php?filter=inprogress">🟡 In Progress</a>
+  </li>
+  <li class="nav-item">
+    <a class="nav-link <?php echo $filter==='completed'?'active bg-success':''; ?>" href="my_courses.php?filter=completed">🟢 Completed</a>
+  </li>
+</ul>
 
 <?php if(isset($_GET['cancelled'])): ?>
   <div class="alert alert-success alert-dismissible fade show">
